@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="left-side">
+            <div>
+                <h1>Bienvenue Dans <i id="akaunti">Akaunti</i> !</h1>
+                <p>Gerez Votre Activité efficacement et Simplement !</p>
+            </div>
+        </div>
+        <div class="right-side">
+            <form action="" method="post" id="form">
+                <h1></h1>
+                <div class="form-group">
+                    <span class="info"></span>
+                </div>
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input type="text" autocomplete="username" name="username" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Mot de Passe</label>
+                    <input type="password" id="password" name="passwd" autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                    <button id="button">Se connecter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+<script>
+    $_GET = {}
+    function buildGET() {
+        let params = window.location.search
+        params = params.replace('?', '');
+        let paramsTab = params.split('&');
+        for (let i = 0; i < paramsTab.length; i++) {
+            let param = paramsTab[i].split('=')
+            $_GET[param[0]] = param[1]
+        }
+    }
+    buildGET();
+    let username = document.getElementById('username')
+    let password = document.getElementById('password')
+    let info = document.getElementsByClassName('info')[0]
+    let form = document.getElementById('form');
+    if($_GET['error'] == 'not-admin'){
+        info.innerHTML = "Connectez-vous avec un compte administrateur pour acceder au tableau de bord"
+    }
+    async function connect() {
+        try {
+            let formData = new FormData(form)
+            const response = await fetch(window.location.origin + "/api/login", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            if (data.privillege == 'admin') {
+                window.location = window.location.origin + "/a-dashboard"
+            } else {
+                window.location = window.location.origin + "/"
+            }
+        } catch (error) {
+            console.log(error)
+            info.innerHTML = "impossible de se connsecter <br> Verifiez les informations fournis !"
+        }
+    }
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        connect()
+
+    })
+</script>
+
+</html>

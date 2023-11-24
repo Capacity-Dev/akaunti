@@ -1,0 +1,13 @@
+{
+	"routes_path":"../global/routes.php",
+	"env":"dev",
+	"rootPath":"../",
+	"logPath":"../log/",
+	"db_info":{
+		"host":"localhost",
+		"user":"root",
+		"password":"root",
+		"database":"akaunti"
+	},
+	"secret_key":"my secret key"
+}

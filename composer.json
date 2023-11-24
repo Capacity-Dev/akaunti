@@ -1,0 +1,15 @@
+{
+    "name": "akaunti/api",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "PatheonApi\\Dev\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Capacity Dev",
+            "email": "capacitydev8@gmail.com"
+        }
+    ]
+}
