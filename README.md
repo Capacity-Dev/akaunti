@@ -1,11 +1,23 @@
 # Akaunti
 
 Un logiciel de gestion de stock facile et léger.
+
+### La page de connexion
 ![Connexion](/demo/1.png "Connexion")
+
+### Liste des produits
 ![produits](/demo/2.png "produits")
+
+### Liste d'utilisateurs
 ![Utilisateurs](/demo/3.png "Utilisateurs")
+
+### Configurations globales
 ![Parametres](/demo/4.png "Parametres")
+
+### Point de vente (POS)
 ![Point de Vente](/demo/5.png "Point de Vente")
+
+
 ## Pour commencer
 
 Clonez le projet en faisant
@@ -14,14 +26,12 @@ Clonez le projet en faisant
    importez le fichier `akaunti.sq`l dans votre base de données puis mettez la configuration de votre base de donnée dans le fichier ``` config/config.json.```
  
  Vous pouvez maintenant lancer votre serveur php dans le dossier `public` et savourer !
-Le s informations de connexion par défaut sont :
+Les informations de connexion par défaut sont :
 ```php
 nom Testor , pass : test //pour le compte non-admin
 nom Admin , pass : admin //pour le compte admin
 ```
 ### Pré-requis
-
-Ce qu'il est requis pour commencer avec votre projet...
 
 - Un serveur php (version 7 ou supérieure)
 - MySQL (Version 5.1.0)
