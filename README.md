@@ -1,7 +1,11 @@
 # Akaunti
 
 Un logiciel de gestion de stock facile et léger.
-
+![Connexion](/demo/1.png "Connexion")
+![produits](/demo/2.png "produits")
+![Utilisateurs](/demo/3.png "Utilisateurs")
+![Parametres](/demo/4.png "Parametres")
+![Point de Vente](/demo/5.png "Point de Vente")
 ## Pour commencer
 
 Clonez le projet en faisant
