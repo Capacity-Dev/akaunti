@@ -8,45 +8,58 @@ class ProductsModel extends Model
 
     public function insertProducts($products)
     {
-        // create the ?,? sequence for a single row
+        /* // create the ?,? sequence for a single row
         $values = '?,?,?,?';
         // construct the entire query
-        $sql = "INSERT INTO products (productName,barcode,price,quantity) VALUES " .
+        $sql = "INSERT INTO products (product_name,barcode,price,quantity) VALUES " .
             // repeat the (?,?) sequence for each row
             str_repeat("($values),", count($products) - 1) . "($values)";
 
-        $stmt = $this->prepare($sql, array_merge(...$products), false);
+        $stmt = $this->prepare($sql, array_merge(...$products), false); */
+        $pdo = $this->db->getPDO();
+        $statement = $pdo->prepare("INSERT INTO products (product_name,barcode,price,purchase_price,quantity) VALUES (:product_name,:barcode,:price,:purchase_price,:quantity)");
+        foreach ($products as $product) {
+            $statement->bindValue(':quantity', $product['quantity'], \PDO::PARAM_INT);
+            $statement->bindValue(':product_name', $product['product_name'], \PDO::PARAM_STR);
+            $statement->bindValue(':barcode', $product['barcode'], \PDO::PARAM_STR);
+            $statement->bindValue(':price', $product['price'], \PDO::PARAM_INT);
+            $statement->bindValue(':purchase_price', $product['purchase_price'], \PDO::PARAM_INT);
+            $statement->execute();
+        }
     }
     public function importProducts($products, $hasQuantity)
     {
 
         if ($hasQuantity) {
             $values = '?,?,?,?';
-            $sql = "INSERT INTO products (productName,barcode,price,quantity) VALUES ";
+            $sql = "INSERT INTO products (product_name,barcode,price,quantity) VALUES ";
         } else {
             $values = '?,?,?';
-            $sql = "INSERT INTO products (productName,barcode,price) VALUES ";
+            $sql = "INSERT INTO products (product_name,barcode,price) VALUES ";
         }
 
         $sql .= str_repeat("($values),", count($products) - 1) . "($values)";
-
-        $stmt = $this->prepare($sql, array_merge(...$products), false);
+        try {
+            $this->prepare($sql, array_merge(...$products), false);
+        } catch (\Throwable $th) {
+            return $th;
+        }
     }
     public function getAllProducts()
     {
-        $statement = $this->query("SELECT productName,barcode,price,quantity FROM products ORDER BY productName");
+        $statement = $this->query("SELECT product_name,barcode,price,quantity FROM products ORDER BY product_name");
         return $statement->fetchAll(\PDO::FETCH_ASSOC);
     }
     public function search($product)
     {
         $query = "%$product%";
-        $statement = $this->prepare("SELECT * FROM products WHERE productName LIKE :product LIMIT 50", ["product" => $query]);
+        $statement = $this->prepare("SELECT * FROM products WHERE product_name LIKE :product LIMIT 50", ["product" => $query]);
         return $statement->fetchAll(\PDO::FETCH_ASSOC);
     }
     public function getLast()
     {
 
-        $statement = $this->query("SELECT id,productName,price,quantity FROM products ORDER BY updated_at DESC LIMIT 10");
+        $statement = $this->query("SELECT id,product_name,price,quantity FROM products ORDER BY updated_at DESC LIMIT 10");
         return $statement->fetchAll(\PDO::FETCH_ASSOC);
     }
     public function addReceipt($data)
@@ -65,8 +78,8 @@ class ProductsModel extends Model
     }
     public function getMostSelled()
     {
-        return $this->query("SELECT productName,
-        SUM(quantity) AS totalQuantity FROM sells GROUP BY productName ORDER BY totalQuantity DESC LIMIT 10 ")
+        return $this->query("SELECT product_name,
+        SUM(quantity) AS totalQuantity FROM sells GROUP BY product_name ORDER BY totalQuantity DESC LIMIT 10 ")
             ->fetchAll(\PDO::FETCH_ASSOC);
     }
     public function getLasReceipt()
@@ -81,13 +94,17 @@ class ProductsModel extends Model
         $products = $this->query("SELECT COUNT(id) as totalProducts, SUM(quantity) as totalQuantity, SUM(price*quantity) as stockValue
             FROM products")
             ->fetch(\PDO::FETCH_ASSOC);
-        $MonthlySells = $this->query("SELECT SUM(quantity) as totalSell,SUM(price) as monthValue
+        $MonthlySells = $this->query("SELECT SUM(quantity) as totalSell,SUM(price) as products_price
         FROM sells WHERE MONTH(created_at) = $month AND YEAR(created_at) = $year")
             ->fetch(\PDO::FETCH_ASSOC);
-        /* $daylySells = $this->query("SELECT COUNT(productName) as daySell,COUNT(price) as daylyValue
+        $MonthlyValues = [
+            "totalSell" => $MonthlySells['totalSell'],
+            'monthValue' => ($MonthlySells['products_price'] * $MonthlySells['totalSell'])
+        ];
+        /* $daylySells = $this->query("SELECT COUNT(product_name) as daySell,COUNT(price) as daylyValue
         FROM sells WHERE STRFTIME(\"%d\", created_at) = $day AND MONTH(created_at) = $month AND YEAR(created_at) = $year") 
             ->fetch(\PDO::FETCH_ASSOC);*/
-        return array_merge($products, $MonthlySells);
+        return array_merge($products, $MonthlyValues);
     }
     public function getLastModified()
     {
@@ -101,7 +118,7 @@ class ProductsModel extends Model
     public function updateProduct($product)
     {
         $this->prepare("UPDATE products
-        SET productName=:productName, price=:price,quantity=:quantity,updated_at=:updated_at
+        SET product_name=:product_name, price=:price,quantity=:quantity,updated_at=:updated_at
         WHERE id=:id ", $product);
     }
     public function deleteProduct($id)
@@ -111,29 +128,36 @@ class ProductsModel extends Model
     }
     public function add2Deleted($data)
     {
-        $this->prepare("INSERT INTO deleted_products (productName,barcode,price) VALUES (:productName,:barcode,:price)", $data);
+        $productExists = $this->prepare("SELECT barcode FROM deleted_products
+        WHERE barcode=:barcode ", ['barcode' => $data["barcode"]])->fetch()?true:false;
+        if($productExists) {
+            return $this->prepare("UPDATE deleted_products SET created_at = NOW() WHERE barcode=:barcode ", ['barcode' => $data["barcode"]]);
+        }
+        $this->prepare("INSERT INTO deleted_products (product_name,barcode,price,purchase_price) VALUES (:product_name,:barcode,:price,:purchase_price)", $data);
     }
     public function getSellsBy($by)
     {
+        
         $month = date('m');
         $year = date('Y');
         $day = date('d');
         if ($by == "d") {
-            $products = $this->query("SELECT productName, SUM(price) as totalPrice, SUM(quantity) totalQuantity FROM sells WHERE STRFTIME(\"%d\", created_at) = $day AND MONTH(created_at) = $month AND YEAR(created_at) = $year GROUP BY productName")
-                ->fetchAll(\PDO::FETCH_ASSOC);
-
-            $total = $this->query("SELECT SUM(price) as total FROM sells WHERE STRFTIME(\"%d\", created_at) = $day AND MONTH(created_at) = $month AND YEAR(created_at) = $year")
-                ->fetch(\PDO::FETCH_ASSOC);
+            $products = $this->query("SELECT product_name, SUM(price) as totalPrice, SUM(quantity) as totalQuantity FROM sells WHERE DAY(created_at) = $day AND MONTH(created_at) = $month AND YEAR(created_at) = $year GROUP BY product_name")
+            ->fetchAll(\PDO::FETCH_ASSOC);
+            
+            $total = $this->query("SELECT SUM(price) as total, SUM(quantity) as total_quantity FROM sells WHERE DAY(created_at) = $day AND MONTH(created_at) = $month AND YEAR(created_at) = $year")
+            ->fetch(\PDO::FETCH_ASSOC);
             $products = $products ? $products : [];
-            return ['products' => $products, 'total' => $total['total']];
+            return ['products' => $products, 'total' => ($total['total']*$total['total_quantity'])];
         } else if ($by == "m") {
-            $products = $this->query("SELECT productName, SUM(price) as totalPrice, SUM(quantity) totalQuantity FROM sells WHERE MONTH(created_at) = $month AND YEAR(created_at) = $year GROUP BY productName")
-                ->fetchAll(\PDO::FETCH_ASSOC);
+            $products = $this->query("SELECT product_name, SUM(price) as totalPrice, SUM(quantity) as totalQuantity FROM sells WHERE MONTH(created_at) = $month AND YEAR(created_at) = $year GROUP BY product_name")
+            ->fetchAll(\PDO::FETCH_ASSOC); 
+            
+            $total = $this->query("SELECT SUM(price) as total, SUM(quantity) as total_quantity FROM sells WHERE MONTH(created_at) = $month AND YEAR(created_at)")
+            ->fetch(\PDO::FETCH_ASSOC);
 
-            $total = $this->query("SELECT SUM(price) as total FROM sells WHERE MONTH(created_at)=$month AND YEAR(created_at)=$year")
-                ->fetch(\PDO::FETCH_ASSOC);
             $products = $products ? $products : [];
-            return ['products' => $products, 'total' => $total['total']];
+            return ['products' => $products, 'total' => ($total['total']*$total['total_quantity'])];
         } else {
             return [];
         }
@@ -151,9 +175,9 @@ class ProductsModel extends Model
         $statement1->closeCursor();
         unset($statement1);
         //add products from sells table
-        $statement2 = $pdo->prepare("INSERT INTO sells (productName,price,quantity) VALUES(:productName,:price,:quantity)");
+        $statement2 = $pdo->prepare("INSERT INTO sells (product_name,price,quantity) VALUES(:product_name,:price,:quantity)");
         foreach ($bill as $product) {
-            $statement2->bindValue(':productName', $product['productName'], \PDO::PARAM_STR);
+            $statement2->bindValue(':product_name', $product['product_name'], \PDO::PARAM_STR);
             $statement2->bindValue(':price', $product['price'], \PDO::PARAM_INT);
             $statement2->bindValue(':quantity', $product['quantity'], \PDO::PARAM_INT);
             $statement2->execute();

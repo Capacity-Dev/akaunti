@@ -104,7 +104,7 @@ class ProductsController extends Controller
     {
         $products = $req->post('products');
         if (!is_null($products)) {
-            $products = array_values($products);
+            //$products = array_values($products);
             try {
                 $this->model->insertProducts($products);
                 $res->addHeader(http_response_code(201));
@@ -126,7 +126,7 @@ class ProductsController extends Controller
     {
         $id = $req->get("id");
         $barcode = $req->get("barcode");
-        if (!is_null($id) || !is_null($id)) {
+        if (!is_null($id) || !is_null($barcode)) {
             $id = (int)$id;
             if ($id) $data = $this->model->getProduct(['id' => $id]);
             else $data = $this->model->getProduct(['barcode' => $barcode]);
@@ -167,8 +167,7 @@ class ProductsController extends Controller
             if ($product) {
                 if ($product['quantity'] > 0) {
                     $res->addHeader(http_response_code(401));
-                    $res->renderJSON(['error' => 'Impossible d\'effacer un produit ayant une quantité en stock']);
-                    return;
+                    return $res->renderJSON(['error' => 'Impossible d\'effacer un produit ayant une quantité en stock']);
                 }
                 unset($product['quantity']);
                 $product = $this->model->add2Deleted($product);
@@ -227,44 +226,72 @@ class ProductsController extends Controller
             array_shift($data);
             if (count(end($data))) array_pop($data); // delete last blank line 
             $hasQuantity = false;
+            $errors = [];
+            $dontImport = [];
+            $i = 2;
             foreach ($data as $key => $value) {
                 if (is_array($value)) {
                     $barcode = $value[1];
+                    if(!$barcode || strlen($barcode) < 2){
+                        // generate a barcode if not exists
+                        $barcode = (time()*999)+$i;
+                        $value[1] = $barcode;
+
+                    }
                     if (!isset($barcodes[$barcode])) {
                         $barcodes[$barcode] = $key; //saving the barcode for the next verification
 
                     } else {
                         //Verify if there is conflicts on barcodes
                         $firstKey = $barcodes[$barcode];
+                        $prevLine = $firstKey+1;
                         $firstProductName = $data[$firstKey][0];
                         $secondProductName = $value[0];
-                        $res->setHeader(http_response_code(400));
-                        $res->renderJSON(['error' => "Les produits $firstProductName et $secondProductName ont le meme code-barre"]);
-                        return;
+                        $errors[] = [($key+1),"Les produits $firstProductName (ligne $prevLine ) et $secondProductName ont le meme code-barre seule $firstProductName est enregistré "];
+                        $dontImport[] = $key;
+                        continue;
                     }
                     if (count($value) < 3) {
-                        $res->setHeader(http_response_code(400));
                         $line = $key + 1;
-                        $res->renderJSON(['error' => "La ligne $line n'est pas complete"]);
-                        return;
+                        $errors[] =[$line,"La ligne $line n'est pas complete"];
+                        $dontImport[] = $key;
+                        unset($barcodes[$barcode]);
                     } else {
-                        $data[$key][0] = trim($data[$key][0]);
-                        $data[$key][2] = floatval($data[$key][2]);
+                        $value[0] = trim($value[0]);
+                        $value[2] = floatval($value[2]);
                         if (isset($value[3])) {
                             $hasQuantity = true;
-                            $data[$key][3] = (int) $value[3];
+                            $value[3] = (int) $value[3];
                         }
                     }
                 } else {
-                    unset($data[$key]);
+                    $line = $key + 1;
+                    $errors[] =[$line,"La ligne $line est vide"];
+                    $dontImport[] = $key;
                 }
+                $i++;
+                $data[$key] = $value;
+            }
+            // clean data
+            foreach ($dontImport as $key) {
+                unset($data[$key]);
+            }
+            // send bad request to user if all data contained errors
+            if(empty($data)){
+                http_response_code(400);
+                $res->renderJSON([
+                    'error' => 'verifiez vos données',
+                    'not_imported' => $errors
+                ]);
             }
             try {
                 $this->model->importProducts($data, $hasQuantity);
-                $res->renderJSON(['success' => 'data saved']);
+                $responseData = ['success' => 'data saved'];
+                count($errors) ? $responseData['not_imported'] = $errors:false;
+                $res->renderJSON($responseData);
             } catch (\Throwable $th) {
                 $res->setHeader(http_response_code(500));
-                throw $th;
+                $res->renderJSON(['message' => $th->getMessage()]);
             }
         }
     }
@@ -276,13 +303,17 @@ class ProductsController extends Controller
     {
         $data = $this->model->getAllProducts();
         if ($data) {
-            $file = fopen('php://output', 'w');
+            $res->addHeader("Content-type: text/csv");
+            $res->addHeader("Content-Disposition: attachment; filename=exports-product-list.csv");
+            $res->addHeader("Pragma: no-cache");
+            $res->addHeader("Expires: 0");
+            $file = fopen('php://memory', 'w+');
             fputcsv($file, ['produit', 'barre-code', 'prix', 'quantite'], ';');
             foreach ($data as $row) {
                 fputcsv($file, $row, ';');
             }
-            fclose($file);
-            exit();
+            rewind($file);
+            return $res->setContent(stream_get_contents($file));
         }
     }
     /**
@@ -310,7 +341,7 @@ class ProductsController extends Controller
             if ($type == 'bill') {
                 $keys = ['companyName', 'adress', 'phone', 'goodbye'];
             } else if ($type == 'globals') {
-                $keys = ['taux', 'tva','currency'];
+                $keys = ['taux', 'tva','currency','critical'];
             } else {
                 http_response_code(400);
                 $res->renderJSON(['error' => 'data is incorrect',$data ]);

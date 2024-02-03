@@ -64,7 +64,6 @@ class Database
             }
             $request->execute();
         }else{
-            var_dump($data);
             $request->execute($data);
         }
         $resource=$request;

@@ -14,7 +14,7 @@ class Table{
         $class=explode('\\',get_class($this));
         $dataPath=end($class);
         $dataPath=strtolower(str_replace('Table','',$dataPath));
-        $dataPath="../app/Database/Tables/data/$dataPath/";
+        $dataPath=__DIR__."/data/$dataPath/";
         $this->dataPath=$dataPath;
     }
     public function __get($name)

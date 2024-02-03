@@ -25,7 +25,8 @@ class UsersController extends Controller
                     return $res->renderJSON(
                         array(
                             'username'=> $userData->usrname,
-                            'privillege'=> $userData->privillege
+                            'privillege'=> $userData->privillege,
+                            "token"
                         )
                     );
                 } else {
@@ -43,7 +44,7 @@ class UsersController extends Controller
         }else{
             $res->addHeader('HTTP/1.1 400 Bad Request');
             $res->renderJSON(array(
-                'error' => "mettez nom d'utilisateur"
+                'error' => "mettez un nom d'utilisateur"
             ));
 
         }
@@ -90,14 +91,40 @@ class UsersController extends Controller
         $id = (int) $req->post('id');
         $profession = $req->post('profession');
         $privillege = $req->post('privillege');
+        $passwd = $req->post("passwd");
         if ($id && $profession && $privillege) {
             $userData = $this->model->getUser(['id' => $id], true);
             if ($userData) {
-                $this->model->updateUser(array(
-                    'id' => $id,
-                    'profession' => $profession,
-                    'privillege' => $privillege
-                ));
+                //for root, only password can be modified
+                if($userData["privillege"] == "root"){
+                    if($req->getCInfo("privillege") == "root"){
+                        if(is_null($passwd)){
+                            $res->addHeader('HTTP/1.1 400 Bad Request');
+                            return $res->renderJSON(array(
+                                'error' => "Impossible de changer le mot de passe !"
+                            ));
+                        }
+                        $this->model->updateUser(array(
+                            'passwd' => password_hash($passwd,null)
+                        ));
+                    }else {
+                        $res->addHeader('HTTP/1.1 400 Bad Request');
+                        return $res->renderJSON(array(
+                            'error' => "Vous n'avez pas les autorisations requises!"
+                        ));
+                    }
+                }else {
+                    $data = array(
+                        'id' => $id,
+                        'profession' => $profession,
+                        'privillege' => $privillege
+                    );
+                    if(!is_null($passwd)) $data["passwd"] = password_hash($passwd,null);
+                    $this->model->updateUser($data);
+                    $res->renderJSON(array(
+                        'message' => "données enregistrées !"
+                    ));
+                }
             } else {
                 $res->addHeader('HTTP/1.1 401 Unauthorized');
                 $res->renderJSON(array(
@@ -126,7 +153,12 @@ class UsersController extends Controller
                     $res->renderJSON(array(
                         'error' => "Vous ne pouvez pas supprimer votre propre compte"
                     ));
-                } else {
+                } else if($user['privillege'] == "root") {
+                    $res->addHeader('HTTP/1.1 401 Unauthorized');
+                    $res->renderJSON(array(
+                        'error' => "Pour des raisons techniques, vous ne pouvez pas supprimer ce compte"
+                    ));
+                }else {
                     $this->model->deleteUser($id);
                 }
             } else {

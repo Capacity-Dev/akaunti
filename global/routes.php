@@ -8,12 +8,12 @@ function WebRoutes($router){
    $router->setApp('Web');//tell to the router that i wanna use the web app
 
    
-   $router->add('/','Default@cashDesk','front-home');
+   $router->add('/(.+)','Default@front','front');
+   /* $router->add('/','Default@cashDesk','front-home');
    $router->add('/logout','Default@logout','logout');
    $router->add('/login','Default@login','login');
-   $router->add('/a-dashboard','Default@dashboard','dashboard-home');
-   $router->add('/a-dashboard/(.+)','Default@dashboard','dashboard');
-   $router->add('/(.+)','Default@cashDesk','front');
+   $router->add('/dashboard','Default@dashboard','dashboard-home');
+   $router->add('/dashboard/(.+)','Default@dashboard','dashboard'); */
    
 
    return $router;

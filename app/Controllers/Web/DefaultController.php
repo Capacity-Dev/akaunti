@@ -44,9 +44,9 @@ class DefaultController extends Controller
      * @param \App\Http\Request $req
      * @param \App\Http\Response $res
      */
-    public function cashDesk($req, $res)
+    public function front($req, $res)
     {
 
-        $res->render('cashDesk/index.html');
+        $res->render('index.html');
     }
 }

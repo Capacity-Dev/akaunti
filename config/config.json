@@ -1,6 +1,6 @@
 {
 	"routes_path":"../global/routes.php",
-	"env":"dev",
+	"env":"prod",
 	"rootPath":"../",
 	"logPath":"../log/",
 	"db_info":{

@@ -27,7 +27,7 @@ class WebAuth extends Middleware{
         $url=$req->getUrl();
         if(!in_array($url,$this->autorized) && !$req->session('username')){
             $res->redirect("/login",true);
-        }else if($req->session('privillege') == "user" && (preg_match('#/a-dashboard#',$url) || preg_match('#\/a-dashboard\/(.+)#',$url))){
+        }else if($req->session('privillege') == "user" && (preg_match('#/dashboard#',$url) || preg_match('#\/dashboard\/(.+)#',$url))){
             $res->redirect("/login?error=not-admin",true);
         }
         
