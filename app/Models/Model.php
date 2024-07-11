@@ -184,7 +184,7 @@ class Model{
 
     }
     /**
-     * make a SQL request to the database
+     * make a prepared SQL request to the database
      * @param string $statement
      * @param array $data
      * @param bool $isAssociative

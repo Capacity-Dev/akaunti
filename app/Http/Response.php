@@ -1,7 +1,7 @@
 <?php
 namespace App\Http;
 use \App\Http\Request;
-
+use Firebase\JWT\JWT;
 /**
  * The server Response
  */
@@ -10,6 +10,9 @@ class Response{
 
     protected $header=[];
     protected $content;
+    /**
+     * @var \App\Http\Request
+     */
     protected $request;
     protected $csrfToken;
     public static $instance;
@@ -60,7 +63,7 @@ class Response{
     }
     /**
      * set The response content
-     * @param String $content
+     * @param string $content
      */
     public function setContent($content){
         $this->content=$content;
@@ -71,6 +74,16 @@ class Response{
      */
     public function getContent(){
         return $this->content;
+    }
+
+    /**
+     * Generating th JWT Token
+     * @param array $payload
+     * @return string The token
+     */
+    public function forgeToken($payload){
+        $key = $this->request->serverParams("private_key");
+        return JWT::encode($payload, $key, 'HS256');
     }
     /**
      * This is the Simple redirection

@@ -16,18 +16,19 @@ class UsersController extends Controller
         $user = $req->post('username');
         $passwd = $req->post('passwd');
         if ($user) {
-            $userData = $this->userExists($user);
+            $userData = $this->model->getUserDetails(["usrname" => $user],true);
             if ($userData) {
 
-                if (password_verify($passwd, $userData->passwd)) {
-                    $res->setSession('username', $userData->usrname);
-                    $res->setSession('privillege', $userData->privillege);
+                if (password_verify($passwd, $userData["passwd"])) {
+                    $user = array(
+                        'id' => $userData["id"],
+                        'username' => $userData["usrname"],
+                        'privillege' => $userData["privillege"],
+                        'affectations' => $userData["affectations"]
+                    );
+                    $token = $res->forgeToken($user);
                     return $res->renderJSON(
-                        array(
-                            'username'=> $userData->usrname,
-                            'privillege'=> $userData->privillege,
-                            "token"
-                        )
+                        ["token" => $token]
                     );
                 } else {
                     $res->addHeader('HTTP/1.1 401 Unauthorized');
@@ -41,12 +42,11 @@ class UsersController extends Controller
                     'error' => "le nom d'utilisateur est invalide"
                 ));
             }
-        }else{
+        } else {
             $res->addHeader('HTTP/1.1 400 Bad Request');
             $res->renderJSON(array(
                 'error' => "mettez un nom d'utilisateur"
             ));
-
         }
     }
     /**
@@ -56,10 +56,10 @@ class UsersController extends Controller
     public function create($req, $res)
     {
         $user = $req->post('usrname');
-        $profession = $req->post('profession');
+        $affectations = $req->post('affectations');
         $privillege = $req->post('privillege');
         $passwd = $req->post('passwd');
-        if ($user && $profession && $privillege && $passwd) {
+        if ($user && $privillege && $passwd) {
             $userData = $this->userExists($user);
             if ($userData) {
                 $res->addHeader('HTTP/1.1 401 Unauthorized');
@@ -69,10 +69,13 @@ class UsersController extends Controller
             } else {
                 $this->model->setUser(array(
                     'usrname' => $user,
-                    'profession' => $profession,
                     'privillege' => $privillege,
                     'passwd' => password_hash($passwd, null)
                 ));
+                if(is_array($affectations) && !empty($affectations)) {
+                    $userID = $this->userExists($user)->id;
+                    $this->model->addAffectations($userID,$affectations);
+                }
                 $res->addHeader('HTTP/1.1 201 Created');
             }
         } else {
@@ -89,40 +92,32 @@ class UsersController extends Controller
     public function update($req, $res)
     {
         $id = (int) $req->post('id');
-        $profession = $req->post('profession');
+        $affectations = $req->post('affectations');
         $privillege = $req->post('privillege');
         $passwd = $req->post("passwd");
-        if ($id && $profession && $privillege) {
+        if ($id && $privillege) {
             $userData = $this->model->getUser(['id' => $id], true);
             if ($userData) {
                 //for root, only password can be modified
-                if($userData["privillege"] == "root"){
-                    if($req->getCInfo("privillege") == "root"){
-                        if(is_null($passwd)){
-                            $res->addHeader('HTTP/1.1 400 Bad Request');
-                            return $res->renderJSON(array(
-                                'error' => "Impossible de changer le mot de passe !"
-                            ));
-                        }
-                        $this->model->updateUser(array(
-                            'passwd' => password_hash($passwd,null)
-                        ));
-                    }else {
-                        $res->addHeader('HTTP/1.1 400 Bad Request');
-                        return $res->renderJSON(array(
-                            'error' => "Vous n'avez pas les autorisations requises!"
-                        ));
-                    }
-                }else {
+                if (in_array($userData["privillege"],["admin","user"] ) || $req->getCInfo("privillege") == "root") {
                     $data = array(
                         'id' => $id,
-                        'profession' => $profession,
                         'privillege' => $privillege
                     );
-                    if(!is_null($passwd)) $data["passwd"] = password_hash($passwd,null);
+                    if (!is_null($passwd)) $data["passwd"] = password_hash($passwd, null);
                     $this->model->updateUser($data);
+                    if(is_array($affectations) && !empty($affectations)) {
+                        $this->model->clearAffectation($id);
+                        $this->model->addAffectations($id,$affectations);
+                    }
                     $res->renderJSON(array(
                         'message' => "données enregistrées !"
+                    ));
+                }
+                else {
+                    $res->addHeader('HTTP/1.1 400 Bad Request');
+                    return $res->renderJSON(array(
+                        'error' => "Vous n'avez pas les autorisations requises!"
                     ));
                 }
             } else {
@@ -150,26 +145,26 @@ class UsersController extends Controller
             if ($user) {
                 if ($req->getCInfo('usrname') == $user['usrname']) {
                     $res->addHeader('HTTP/1.1 401 Unauthorized');
-                    $res->renderJSON(array(
+                    return $res->renderJSON(array(
                         'error' => "Vous ne pouvez pas supprimer votre propre compte"
                     ));
-                } else if($user['privillege'] == "root") {
+                } else if ($user['privillege'] == "root" && $req->getCInfo("privillege") != "root") {
                     $res->addHeader('HTTP/1.1 401 Unauthorized');
-                    $res->renderJSON(array(
+                    return $res->renderJSON(array(
                         'error' => "Pour des raisons techniques, vous ne pouvez pas supprimer ce compte"
                     ));
-                }else {
-                    $this->model->deleteUser($id);
+                } else {
+                    return $this->model->deleteUser($id);
                 }
             } else {
                 $res->addHeader('HTTP/1.1 400 Bad Request');
-                $res->renderJSON(array(
+                 return $res->renderJSON(array(
                     'error' => "l'utilisateur que vous essayez de supprimer n'existe pas"
                 ));
             }
         } else {
             $res->addHeader('HTTP/1.1 400 Bad Request');
-            $res->renderJSON(array(
+            return $res->renderJSON(array(
                 'error' => "provide ID"
             ));
         }

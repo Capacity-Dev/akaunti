@@ -8,6 +8,7 @@ function WebRoutes($router){
    $router->setApp('Web');//tell to the router that i wanna use the web app
 
    
+   $router->add('/','Default@front','front-home');
    $router->add('/(.+)','Default@front','front');
    /* $router->add('/','Default@cashDesk','front-home');
    $router->add('/logout','Default@logout','logout');
@@ -39,10 +40,17 @@ function ApiRoutes($router){
    $router->add('/api/get-sells','Products@getSells','get-sells','get');
    $router->add('/api/overview','Products@overview','overview','get');
    $router->add('/api/save-bill','Products@saveBill','save-bill','post');
+   $router->add('/api/last-bill','Products@getLastBill','last-bill','get');
+   $router->add('/api/remove-bill','Products@deleteBill','remove-bill','post');
    $router->add('/api/import','Products@import','import-csv','post');
    $router->add('/api/export','Products@export','export-csv','get');
    $router->add('/api/get-config','Products@getConfigs','get-config','get');
    $router->add('/api/save-config','Products@changeConfigs','save-config','post');
+   $router->add('/api/get-locations','Products@getLocations','get-locations','get');
+   $router->add('/api/get-location','Products@getLocation','get-location','get');
+   $router->add('/api/new-location','Products@addlocation','new-location','post');
+   $router->add('/api/update-stock','Products@updateStock','update-stock','post');
+   $router->add('/api/fill-stock','Products@fillStock','fill-stock','get');
 
    //users routes
    $router->add('/api/login','Users@login','login','post');

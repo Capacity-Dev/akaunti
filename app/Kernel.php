@@ -24,7 +24,7 @@ class Kernel{
 
     public function init(Array $config)
     {
-        $this->request=new Request($config);
+        $this->request=Request::getInstance($config);
         $this->router=Router::getInstance();
         $this->response=Response::getInstance();
         $this->database=Database::getInstance($config['db_info']);
@@ -43,8 +43,7 @@ class Kernel{
     public function run(){
 
         //including routes
-        include($this->config['routes_path']);
-        
+        include($this->config['routes']);
         $this->router->init($this->request,$this->response);
         if($this->isApiRequest())$router=ApiRoutes($this->router);
         else $router=WebRoutes($this->router);

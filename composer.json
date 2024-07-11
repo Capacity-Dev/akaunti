@@ -3,7 +3,7 @@
     "type": "project",
     "autoload": {
         "psr-4": {
-            "PatheonApi\\Dev\\": "src/"
+            "App\\": "app/"
         }
     },
     "authors": [
@@ -11,5 +11,9 @@
             "name": "Capacity Dev",
             "email": "capacitydev8@gmail.com"
         }
-    ]
+    ],
+    "require": {
+        "firebase/php-jwt": "^6.10",
+        "mpdf/mpdf": "^8.2"
+    }
 }

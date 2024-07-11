@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Template</title>
+    <style>
+        .main{
+            width: 400px;
+        }
+        h1,h2{
+            text-align: center;
+        }
+        .header{
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-left: auto;
+        }
+        table {
+            font-size: 18px;
+            width: 98%;
+            border-collapse: collapse;
+        }
+        th{
+            border: 2px solid black;
+            padding: 6px;
+            text-align: center;
+            min-width: 16px;
+        }
+        tbody td{
+            text-align: center;
+            border: 2px solid black;
+            padding: 6px;
+        }
+        tbody td:first-child {
+            text-align: left;
+        }
+        tfoot td {
+            text-align: center;
+            border: none;
+            padding-right: 12px;
+        }
+        .total {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="header">
+            <h1>{shop_name}</h1>
+            <p>{shop_infos}</p>
+        </div>
+        <div class="section">
+            <h3>Facture Numero : {f_number}</h3>
+            <h3>Date de livraison : {date}</h3>
+        </div>
+        <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Designation</th>
+                        <th>Qte</th>
+                        <th>prix</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {products_list}
+                </tbody>
+                <tfoot>
+                    <tr class="tht" >
+                        <td colspan="2">Total HT</td>
+                        <td colspan="2">{tht}</td>
+                    </tr>
+                    {taxes}
+                    <tr class="total" style="font-weight: bold;" >
+                        <td colspan="2"><b>Total</b></td>
+                        <td colspan="2"><b>{total}</b></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="section">
+            <h2>Merci pour votre visite !</h2>
+            <hr>
+            <h6>Akaunti</h6>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Template</title>
+    <style>
+        .main{
+            width: 400px;
+        }
+        h1,h2{
+            text-align: center;
+        }
+        .header{
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-left: auto;
+        }
+        table {
+            font-size: 18px;
+            width: 98%;
+            border-collapse: collapse;
+        }
+        th{
+            border: 2px solid black;
+            padding: 6px;
+            text-align: center;
+            min-width: 16px;
+        }
+        tbody td{
+            text-align: center;
+            border: 2px solid black;
+            padding: 6px;
+        }
+        tbody td:first-child {
+            text-align: left;
+        }
+        tfoot td {
+            text-align: center;
+            border: none;
+            padding-right: 12px;
+        }
+        .total {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="header">
+            <h1>TESTO</h1>
+            <p>Adresse : Av Manono, C/Kenya<br>phone : +243 000 000 000</p>
+        </div>
+        <div class="section">
+            <h3>Facture Numero : 1720593821</h3>
+            <h3>Date de livraison : 10/07/2024 08:43:42</h3>
+        </div>
+        <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Designation</th>
+                        <th>Qte</th>
+                        <th>prix</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td style="text-align: left;">AMPOUL PHAR  243</td>
+                        <td>12</td>
+                        <td>12308</td>
+                        <td>147696</td>
+                    </tr>
+                
+                </tbody>
+                <tfoot>
+                    <tr class="tht" >
+                        <td colspan="2">Total HT</td>
+                        <td colspan="2">147696</td>
+                    </tr>
+                    
+                    <tr class="total" style="font-weight: bold;" >
+                        <td colspan="2"><b>Total</b></td>
+                        <td colspan="2"><b>147696</b></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="section">
+            <h2>Merci pour votre visite !</h2>
+            <hr>
+            <h6>Akaunti</h6>
+        </div>
+    </div>
+</body>
+</html>

@@ -17,7 +17,7 @@ class App{
     protected function init($configPath){
         
         session_start();
-        $this->params=json_decode(file_get_contents($configPath),true);
+        $this->params=include $configPath;
         $this->kernel=new Kernel($this->params);
 
     }
@@ -36,7 +36,8 @@ class App{
         $errorMessage.=':'.$exception->getMessage().'\n\t\r';
         $errorMessage.='on '.$exception->getFile().'line : '.$exception->getLine();
 
-        fputs($this->params['logPath'].'errorLog.txt',$errorMessage);
+        $log_file = fopen($this->params['logPath'].'errorLog.txt',"a+");
+        fputs($log_file,$errorMessage);
     }
     public function sendResponse(){
         

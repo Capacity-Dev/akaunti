@@ -3,5 +3,5 @@
  /**
   * initializing and runing lemon
   */
-  $app=new App(ROOT_PATH.'/config/config.json');
+  $app=new App(ROOT_PATH.'/config/config.php');
   $app->run();
